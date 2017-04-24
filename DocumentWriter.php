@@ -95,19 +95,19 @@ class DocumentWriter
         $fancyTableFontStyle = array('bold' => false);
         $this->phpWord->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle);
         $table = $this->body->addTable($fancyTableStyleName);
-        $table->addRow();
-
-        $table->addCell(2000, $fancyTableCellStyle)->addText('Цена:', $fancyTableFontStyle);
-        $table->addCell(2000, $fancyTableCellStyle)->addText($price, $fancyTableFontStyle);
-        $table->addCell(2000, $fancyTableCellStyle)->addText('', $fancyTableFontStyle);
-        foreach ($attributes as $i => $attribute) {
-            if ($i % 2 == 0) {
+//        $table->addRow();
+//
+//        $table->addCell(2000, $fancyTableCellStyle)->addText('Цена:', $fancyTableFontStyle);
+//        $table->addCell(2000, $fancyTableCellStyle)->addText('333', $fancyTableFontStyle);
+//        $table->addCell(2000, $fancyTableCellStyle)->addText('', $fancyTableFontStyle);
+        foreach ($attributes as $key => $attribute) {
+////            if ($i % 2 == 0) {
                 $table->addRow();
-            }
-            $table->addCell(2000, $fancyTableCellStyle)->addText(isset($attribute['key']) ? $attribute['key'] : $attribute['value'], $fancyTableFontStyle);
-            if ($i % 2 != 0) {
-                $table->addCell(2000, $fancyTableCellStyle)->addText('', $fancyTableFontStyle);
-            }
+
+            $table->addCell(2000, $fancyTableCellStyle)->addText($key=='EMPTY' ? ' ' : $key, $fancyTableFontStyle);
+            $table->addCell(2000, $fancyTableCellStyle)->addText($attribute, $fancyTableFontStyle);
+            $table->addCell(2000, $fancyTableCellStyle)->addText(' ', $fancyTableFontStyle);
+//            $table->addRow();
         }
     }
 
@@ -147,6 +147,7 @@ class DocumentWriter
             $description, $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
+        $this->body->addPageBreak();
     }
 
     public function images($images)
@@ -165,6 +166,10 @@ class DocumentWriter
             $this->body->addImage($image, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
             ));
+            $this->body->addText(
+                "\n", $fontBold14, array(
+                    'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER)
+            );
         }
     }
 
@@ -176,7 +181,7 @@ class DocumentWriter
         $font12->setSize(12);
 
         $this->body->addText(
-            "\nС уважением\n", $font12, array(
+            "\nС уважением,\n", $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
 
@@ -186,10 +191,10 @@ class DocumentWriter
         );
 
         setlocale(LC_ALL, "rus");
-        $test = strftime(" %d/%m/%Y", time());
+        $date = strftime(" %d/%m/%Y", time());
 
         $this->body->addText(
-            "\nВарезе, " . $test, $font12, array(
+            "\nВарезе, " . $date, $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::END)
         );
     }
