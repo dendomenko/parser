@@ -7,7 +7,7 @@
 </head>
 <?php
     session_start();
-    $password = 123456;
+    $password = trim(fgets(fopen('pass.txt', 'r')));
     if (isset($_POST['pass']) && ($_POST['pass'] == $password)):
         $_SESSION['pass'] = $_POST['pass'];
         if ($_SESSION['pass'] == $_POST['pass']): ?>
@@ -28,6 +28,26 @@
                                     </div>
                                     <div class="card-action">
                                         <input type="submit" class="btn" value="GENERATE">
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="col s12 m6 offset-m3">
+                        <div class="card">
+                            <div class="card-content">
+                                <span class="card-title black-text">Change Password</span>
+                                <form action="<?php echo $_SERVER['REQUEST_SCHEME'] . '://' .  $_SERVER['HTTP_HOST'] ?>/parser/pass-change.php" method="post">
+                                    <div class="row">
+                                        <div class="input-field col s12">
+                                            <input id="url" placeholder="SET PASSWORD" type="password" name="password"
+                                                   value="<?php echo $password ?>">
+                                            <label for="url">PASSWORD</label>
+                                        </div>
+                                    </div>
+                                    <div class="card-action">
+                                        <input type="submit" class="btn" value="CHANGE PASSWORD">
                                     </div>
                                 </form>
                             </div>
@@ -54,6 +74,27 @@
                                     <input type="submit" class="btn" value="Enter">
                                 </div>
                             </form>
+                            <div class="card-action">
+                                <input type="button" id="forgot" class="btn modal-trigger" data-target="modal1" value="FORGOT PASSWORD">
+                            </div>
+                            <div id="modal1" class="modal">
+                                <div class="modal-content">
+                                    <h4>RESET PASSWORD</h4>
+                                    <div class="row">
+                                        <form class="col s12" id="forgot-form">
+                                            <div class="row modal-form-row">
+                                                <div class="input-field col s12">
+                                                    <input id="mail" name="mail" type="email" class="validate">
+                                                    <label for="mail">EMAIL</label>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <a class=" modal-action modal-close waves-effect waves-green btn-flat" id="reset">Submit</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -62,29 +103,8 @@
     <?php endif; ?>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.1/css/materialize.min.css">
         <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.1/js/materialize.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/js/materialize.min.js"></script>
+        <script type="text/javascript" src="main.js"></script>
         </body>
 </html>
 
-
-<pre>
-<?php
-//require_once 'vendor/autoload.php';
-//require_once 'DocumentReader.php';
-//require_once 'DocumentWriter.php';
-//
-//$url = 'https://www.immobiliare.it/61071538-Vendita-Trilocale-via-della-Chiesa-22-Laglio.html';
-//
-//$document = new DocumentReader($url);
-//
-//print_r($document->getAttributes());
-//
-//$docWord = new DocumentWriter();
-//$docWord->titleAndTable($document->getTitle(), $document->getAttributes(), $document->getPrice());
-//$docWord->map($document->getMap());
-//$docWord->description($document->getDescription());
-//$docWord->images($document->getImages());
-//$docWord->regards();
-//$docWord->save();
-//?>
-<!--</pre>-->

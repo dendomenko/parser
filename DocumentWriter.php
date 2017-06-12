@@ -9,15 +9,17 @@ class DocumentWriter
     public function __construct()
     {
         $this->phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $this->phpWord->setDefaultFontName('Calibri');
+        $this->phpWord->setDefaultFontSize(12);
+        $this->body = $this->phpWord->addSection(array('breakType' => 'continuous'));
+
         $this->header();
-        $this->body = $this->phpWord->addSection();
         $this->footer();
     }
 
     private function header()
     {
-        $head_section = $this->phpWord->addSection();
-        $header = $head_section->addHeader();
+        $header = $this->body->addHeader();
         $header->addImage(
             'header.png',
             array(
@@ -29,6 +31,12 @@ class DocumentWriter
                 'borderStyle' => 'solid'
             )
         );
+        $header->addText(
+            "\n",
+            array(
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+            )
+        );
 
     }
 
@@ -38,17 +46,39 @@ class DocumentWriter
         $fontStyle->setBold(false);
         $fontStyle->setName('Calibri');
         $fontStyle->setSize(9);
-        $footer_section = $this->phpWord->addSection();
-        $footer = $footer_section->addFooter();
+        $footer = $this->body->addFooter();
         $footer->addText(
-            'Via Romagnosi 4, Varese, 21100',
-
-
+            "",
             $fontStyle,
             array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
             )
         );
+        $footer->addText(
+            'Via Romagnosi 4, Varese, 21100',
+            $fontStyle,
+            array(
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+            )
+        );
+
+        /**
+          Комментарии для добовления в нижний колонтитул
+          Если Вы хотите что то добавить в нижний колонтитул
+          то вам необходимо сделать следующее
+          скопировать текст который ниже
+
+         $footer->addText(
+            'СЮДА ВСТАВЬТЕ ВАШ ТЕКСТ',
+            $fontStyle,
+            array(
+            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+            )
+         );
+         и заменить текст в кавычках на ваш текст
+         Ниже вы можете видеть текущий колонтитул и текст в нем
+         вставьте вашу секцию с нужны
+        **/
         $footer->addText(
             '+39.0332.1690363',
             $fontStyle,
@@ -74,6 +104,7 @@ class DocumentWriter
 
     public function save()
     {
+
         $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($this->phpWord, 'Word2007');
         $objWriter->save('file.docx');
     }
@@ -85,34 +116,28 @@ class DocumentWriter
         $fontTitle->setName('Calibri');
         $fontTitle->setSize(18);
         $this->body->addText(
-            "\n" . $title . "\n", $fontTitle, array(
+            $title . "\n", $fontTitle, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER)
         );
         $fancyTableStyleName = 'Fancy Table';
-        $fancyTableStyle = array('borderSize' => 6, 'borderColor' => '006699', 'cellMargin' => 80, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
-        $fancyTableFirstRowStyle = array('borderBottomSize' => 18, 'borderBottomColor' => '0000FF', 'bgColor' => '66BBFF');
+        $fancyTableStyle = array('borderSize' => 0, 'borderColor' => '000000', 'cellMargin' => 0, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER);
         $fancyTableCellStyle = array('valign' => 'center');
         $fancyTableFontStyle = array('bold' => false);
-        $this->phpWord->addTableStyle($fancyTableStyleName, $fancyTableStyle, $fancyTableFirstRowStyle);
+        $this->phpWord->addTableStyle($fancyTableStyleName, $fancyTableStyle);
         $table = $this->body->addTable($fancyTableStyleName);
-//        $table->addRow();
-//
-//        $table->addCell(2000, $fancyTableCellStyle)->addText('Цена:', $fancyTableFontStyle);
-//        $table->addCell(2000, $fancyTableCellStyle)->addText('333', $fancyTableFontStyle);
-//        $table->addCell(2000, $fancyTableCellStyle)->addText('', $fancyTableFontStyle);
-        foreach ($attributes as $key => $attribute) {
-////            if ($i % 2 == 0) {
-                $table->addRow();
 
-            $table->addCell(2000, $fancyTableCellStyle)->addText($key=='EMPTY' ? ' ' : $key, $fancyTableFontStyle);
-            $table->addCell(2000, $fancyTableCellStyle)->addText($attribute, $fancyTableFontStyle);
-            $table->addCell(2000, $fancyTableCellStyle)->addText(' ', $fancyTableFontStyle);
-//            $table->addRow();
+        foreach ($attributes as $key => $attribute) {
+            if ($attribute != '') {
+                $table->addRow();
+                $table->addCell(4000, $fancyTableCellStyle)->addText($key, $fancyTableFontStyle);
+                $table->addCell(4000, $fancyTableCellStyle)->addText($attribute, $fancyTableFontStyle);
+            }
         }
     }
 
-    public function map($map)
+    public function map($maps)
     {
+        $this->body->addPageBreak();
         $fontBold14 = new \PhpOffice\PhpWord\Style\Font();
         $fontBold14->setBold(true);
         $fontBold14->setName('Calibri');
@@ -121,9 +146,11 @@ class DocumentWriter
             "\n1. Расположение\n", $fontBold14, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
-        $this->body->addImage($map, array(
-            'width' => 650
-        ));
+        foreach ($maps as $map) {
+            $this->body->addImage($map, array(
+                'width' => 600
+            ));
+        }
     }
 
     public function description($description)
@@ -161,10 +188,12 @@ class DocumentWriter
             "\n3. Фото\n", $fontBold14, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
-
         foreach ($images as $image) {
             $this->body->addImage($image, array(
-                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER
+                'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+//                'height' => 250
+                'width' => 600
+
             ));
             $this->body->addText(
                 "\n", $fontBold14, array(
@@ -179,20 +208,16 @@ class DocumentWriter
         $font12->setBold(false);
         $font12->setName('Calibri');
         $font12->setSize(12);
-
         $this->body->addText(
             "\nС уважением,\n", $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
-
         $this->body->addText(
             "\nКоманда Мирафортис\n", $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START)
         );
-
         setlocale(LC_ALL, "rus");
         $date = strftime(" %d/%m/%Y", time());
-
         $this->body->addText(
             "\nВарезе, " . $date, $font12, array(
                 'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::END)

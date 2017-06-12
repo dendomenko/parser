@@ -17,14 +17,6 @@ class DocumentReader
     private $translator = null;
 
 
-    // Make table for semen
-    private $fields = ['Цена', 'Площадь', 'Количество комнат',
-        'Ванные комнаты', 'Состояние',
-        'Этаж', 'Гараж', 'Сад / терраса / балкон',
-        'Вид на воду', 'ПУСТАЯ СТРОКА', 'Отопление',
-        'Отопление', 'Год постройки',
-    ];
-
     public function __construct($link)
     {
         $this->link = substr($link, strrpos($link, '/') + 1);
@@ -64,38 +56,25 @@ class DocumentReader
 
     public function getAttributes()
     {
-//        $table = $this->crawlerRu->filter('div.details > table');
-//        $result = [];
-//        foreach ($table->children() as $i => $content) {
-//            $crawlerTable = new Crawler($content);
-//            $tr = $crawlerTable->filter('tr');
-//            foreach ($tr->children() as $j => $td) {
-//                $result[] = array(
-//                    $td->attributes->length == 1 ? 'key' : 'value' =>
-//                        trim($td->textContent)
-//                );
-//            }
-//        }
 
         $price = $this->getPrice();
         $price = trim(ltrim($price, '€')) . ' €';
 
         $sqare = $this->crawlerIt->filter('div.feature-action__features > ul.list-inline > li > div > strong')->last();
-        $sqare = $sqare->count() > 0 ? $sqare->text() : '' ;
+        $sqare = $sqare->count() > 0 ? $sqare->text() : '';
 
         $room = $this->crawlerIt->filter('div.feature-action__features > ul.list-inline > li > div > i.rooms');
-        $room = $room->count() > 0 ?  $room->previousAll()->filter('strong')->text() : '' ;
+        $room = $room->count() > 0 ? $room->previousAll()->filter('strong')->text() : '';
 
         $bath = $this->crawlerIt->filter('div.feature-action__features > ul.list-inline > li > div > i.bathrooms');
-        $bath = $bath->count() > 0 ?  $bath->previousAll()->filter('strong')->text() : '' ;
+        $bath = $bath->count() > 0 ? $bath->previousAll()->filter('strong')->text() : '';
 
         $month_costs = $this->crawlerIt->filter('div.section-data > dl.col-xs-12 > dt.col-sm-7');
         if ($month_costs->count() > 0 && $month_costs->text() == 'Spese condominio') {
             $costs = $month_costs->nextAll()->text();
         }
+
         $tables = $this->crawlerIt->filter('div.section-data > dl.col-xs-12');
-//        print_r($tables);
-        $tmp = [];
         $tables = $tables->each(function (Crawler $node, $i) {
             return $node->children()->each(function (Crawler $val, $i) {
                 return strip_tags($val->text());
@@ -104,7 +83,6 @@ class DocumentReader
 
         foreach ($tables as $table) {
             foreach ($table as $i => $val) {
-//            print_r($table->textContent);
                 if ($val == 'Piano')
                     $floor = $this->translator->translate($table[$i + 1]);
                 if ($val == 'Anno di costruzione')
@@ -113,8 +91,8 @@ class DocumentReader
                     $warm = $this->translator->translate($table[$i + 1]);
                 if ($val == 'Stato')
                     $state = $this->translator->translate($table[$i + 1]);
-                if ($val == 'Climatizzatore')
-                    $condi = $this->translator->translate($table[$i + 1]);
+//                if ($val == 'Climatizzatore')
+//                    $condi = $this->translator->translate($table[$i + 1]);
                 if ($val == 'Box e posti auto')
                     $garage = $this->translator->translate($table[$i + 1]);
             }
@@ -126,34 +104,32 @@ class DocumentReader
             return $this->translator->translate($text->text());
         });
 
-//        print_r($charact);
-
         $result = array('Цена' => isset($price) ? $price : '',
-            'Площадь' => isset($sqare)? $sqare . 'кв.м': '',
-            'Комнаты' => isset($room)? $room : '',
-            'Ванные' => isset($bath)? $bath : '',
+            'Площадь' => isset($sqare) ? $sqare . 'кв.м' : '',
+            'Комнаты' => isset($room) ? $room : '',
+            'Ванные' => isset($bath) ? $bath : '',
             'Состояние' => isset($state) ? $state : '',
-            'Этаж' => isset($floor)? $floor : '',
-            'Гараж' => isset($garage)? $garage :'',
-            'Сад / терраса / балкон' => '',
+            'Этаж' => isset($floor) ? $floor : '',
+            'Гараж' => isset($garage) ? $garage : '',
             'Вид на воду' => '',
-            'EMPTY' => '',
-            'Отопление' => isset($warm)? $warm : '',
-            'Кондиционер' => isset($condi)? $condi : '',
-            'Год постройки' => isset($year)? $year : '',
-            'Жилищные расходы' =>isset($costs) ? $costs : ''
+            'Отопление' => isset($warm) ? $warm : '',
+//            'Кондиционер' => isset($condi)? $condi : '',
+            'Год постройки' => isset($year) ? $year : '',
+            'Жилищные расходы' => isset($costs) ? $costs : ''
         );
 
         foreach ($charact as $key => $value) {
-            $char = $this->mb_ucfirst($value);
-            $result[$char]='Да';
+            if (trim($value) != 'Двойная экспозиция') {
+                if (trim($value) == 'тераццо') {
+                    $char = "Терраса";
+                    $result[$char] = 'Да';
+                } else {
+                    $char = $this->mb_ucfirst($value);
+                    $result[$char] = 'Да';
+                }
+            }
         }
-
-//        foreach ($table->children() as $i => $content) {
-//            $crawlerTable = new Crawler($content);
-//            $tr = $crawlerTable->filter('li')->first();
-//            print_r($tr);
-//        }
+//        $result['EMPTY'] = ' ';
 
         return $result;
     }
@@ -183,17 +159,33 @@ class DocumentReader
             if ($imgId != '')
                 $images[] = "http://pic.im-cdn.it/image/$imgId/print.jpg";
         }
+
+        if ($this->crawlerIt->filter('div#planimetria')->count() > 0) {
+            $planBlock = $this->crawlerIt->filter('div#planimetria > div.container-carousel > div.showcase > div.showcase__list');
+            foreach ($planBlock->children() as $img) {
+                $crawlerImg = new Crawler($img);
+                $img = $crawlerImg->filter('img')->attr('src');
+                if ($img != '')
+                    $images[] = $img;
+            }
+        }
         return $images;
     }
 
     public function getMap()
     {
-        $imageData = $this->crawlerIt->filter('div#maps-container > div.image-placeholder');
-        $imageData->attr('data-background-image');
-        return $imageData->attr('data-background-image');
+        $addressData = $this->crawlerIt->filter('div.maps-address > span > strong');
+        $address = $addressData->text();
+
+        $address = trim($address);
+
+        $map[] = "https://maps.googleapis.com/maps/api/staticmap?center=" . $this->getCoordinates($address) . "&markers=color:blue%7Clabel:O%7C" . $this->getCoordinates($address) . "&zoom=11&size=650x300";
+        $map[] = "https://maps.googleapis.com/maps/api/staticmap?center=" . $this->getCoordinates($address) . "&zoom=15&size=650x300";
+
+        return $map;
     }
 
-    private function mb_ucfirst($string, $encoding='UTF-8')
+    private function mb_ucfirst($string, $encoding = 'UTF-8')
     {
         $strlen = mb_strlen($string, $encoding);
         $firstChar = mb_substr($string, 0, 1, $encoding);
@@ -201,31 +193,13 @@ class DocumentReader
         return mb_strtoupper($firstChar, $encoding) . $then;
     }
 
-//    private function get_curl($url)
-//    {
-//        if (function_exists('curl_init')) {
-//            $ch = curl_init();
-//            curl_setopt($ch, CURLOPT_URL, $url);
-//            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//            curl_setopt($ch, CURLOPT_HEADER, 0);
-//            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Accept-Language: ru,en-us'));
-//            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-//            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-//            $output = curl_exec($ch);
-//            echo curl_error($ch);
-//            curl_close($ch);
-//            return $output;
-//        } else {
-//            return file_get_contents($url);
-//        }
-//    }
-//
-//    private function translate_text($text, $lan='it-ru')
-//    {
-//        $key = "trnsl.1.1.20170113T093134Z.41ceccae89b8f83a.c14cf30e732402dfae1377ccce68a162057f16c7";
-//        $res = $this->get_curl("https://translate.yandex.net/api/v1.5/tr.json/translate?key=$key&text=$text&lang=$lan");
-//        return json_decode($res)->text[0];
-////        print_r($res);
-//    }
+    public function getCoordinates($address)
+    {
+        $address = str_replace(" ", "+", $address); // replace all the white space with "+" sign to match with google search pattern
+        $url = "http://maps.google.com/maps/api/geocode/json?sensor=false&address=$address";
+        $response = file_get_contents($url);
+        $json = json_decode($response, TRUE); //generate array object from the response from the web
+        return ($json['results'][0]['geometry']['location']['lat'] . "," . $json['results'][0]['geometry']['location']['lng']);
+    }
 
 }
